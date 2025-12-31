@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static('public'));
 
 const BASE_URL = 'https://amazfitwatchfaces.com';
 
@@ -22,7 +22,7 @@ const HEADERS = {
 };
 
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+    res.sendFile(__dirname + '/public/index.html');
 });
 
 app.get('/api/scrape', async (req, res) => {
