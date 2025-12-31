@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amazfit GTR Watch Faces</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1 id="main-title">Amazfit GTR3 Watchfaces</h1>
+            <p class="subtitle" id="search-subtitle">Found <span id="count">0</span> watches</p>
+        </header>
+
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Search brands (e.g. rolex, casio, omega)..." value="">
+            <button id="refresh-btn">
+                <span id="btn-text">Search</span>
+            </button>
+        </div>
+
+        <div id="loading-container" style="display: none;">
+            <span class="loader"></span>
+            <p class="status-message">Scraping the latest faces...</p>
+        </div>
+
+        <div id="watch-grid">
+            <!-- Items will be injected here -->
+        </div>
+    </div>
+
+    <script>
+        const grid = document.getElementById('watch-grid');
+        const refreshBtn = document.getElementById('refresh-btn');
+        const searchInput = document.getElementById('search-input');
+        const loadingContainer = document.getElementById('loading-container');
+        const btnText = document.getElementById('btn-text');
+        const countSpan = document.getElementById('count');
+        const searchSubtitle = document.getElementById('search-subtitle');
+
+        async function fetchFaces() {
+            const query = searchInput.value.trim() || 'rolex';
+            grid.innerHTML = '';
+            loadingContainer.style.display = 'flex';
+            refreshBtn.disabled = true;
+            btnText.textContent = 'Searching...';
+            searchSubtitle.innerHTML = `Searching for "${query}"... (Found <span id="count">0</span> watches)`;
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/scrape?q=${encodeURIComponent(query)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    searchSubtitle.innerHTML = `Found <span id="count">${result.count}</span> watches for "${result.query}"`;
+                    displayFaces(result.data);
+                } else {
+                    grid.innerHTML = `<p class="status-message">Error: ${result.message}</p>`;
+                }
+            } catch (error) {
+                grid.innerHTML = `<p class="status-message">Error connecting to server. Make sure the Node.js app is running.</p>`;
+            } finally {
+                loadingContainer.style.display = 'none';
+                refreshBtn.disabled = false;
+                btnText.textContent = 'Search';
+            }
+        }
+
+        function displayFaces(faces) {
+            grid.innerHTML = '';
+            faces.forEach((face, index) => {
+                const card = document.createElement('a');
+                card.className = 'watch-card';
+                card.href = face.link;
+                card.target = '_blank';
+                card.style.textDecoration = 'none';
+                card.style.color = 'inherit';
+                card.style.display = 'block';
+                card.style.animationDelay = `${index * 0.05}s`;
+
+                card.innerHTML = `
+                    <div class="watch-image-container">
+                        <img class="watch-image" src="${face.image}" alt="${face.title}" loading="lazy">
+                    </div>
+                    <div class="watch-info">
+                        <h2 class="watch-title" title="${face.title}">${face.title}</h2>
+                        <p class="watch-author">by ${face.author}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        refreshBtn.addEventListener('click', fetchFaces);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') fetchFaces();
+        });
+    </script>
+</body>
+
+</html>
